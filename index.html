@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="Benchmarking Image Safety Classifiers on Real-World and AI-Generated Images">
+  <meta name="keywords" content="Unsafe Images">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UnsafeBench</title>
+
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/954/954591.png">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/js/all.min.js"></script>
+  <script type="module" src="https://gradio.s3-us-west-2.amazonaws.com/4.16.0/gradio.js"></script>
+</head>
+
+<style>
+  .expandable-card .card-text-container {
+    max-height: 200px;
+    overflow-y: hidden;
+    position: relative;
+  }
+
+  .expandable-card.expanded .card-text-container {
+    max-height: none;
+  }
+
+  .expand-btn {
+    position: relative;
+    display: none;
+    background-color: rgba(255, 255, 255, 0.8);
+    /* margin-top: -20px; */
+    /* justify-content: center; */
+    color: #510c75;
+    border-color: transparent;
+  }
+
+  .expand-btn:hover {
+    background-color: rgba(200, 200, 200, 0.8);
+    text-decoration: none;
+    border-color: transparent;
+    color: #510c75;
+  }
+
+  .expand-btn:focus {
+    outline: none;
+    text-decoration: none;
+  }
+
+  .expandable-card:not(.expanded) .card-text-container:after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 90px;
+    background: linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 1));
+  }
+
+  .expandable-card:not(.expanded) .expand-btn {
+    margin-top: -40px;
+  }
+
+  .card-body {
+    padding-bottom: 5px;
+  }
+
+  .vertical-flex-layout {
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .figure-img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .adjustable-font-size {
+    font-size: calc(0.5rem + 2vw);
+  }
+
+  .chat-history {
+    flex-grow: 1;
+    overflow-y: auto;
+    /* overflow-x: hidden; */
+    padding: 5px;
+    border-bottom: 1px solid #ccc;
+    margin-bottom: 10px;
+  }
+
+  #gradio pre {
+    background-color: transparent;
+  }
+</style>
+
+<body>
+
+  <section class="hero">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            <h1 class="title is-2 publication-title">UnsafeBench: Benchmarking Image Safety Classifiers on Real-World and AI-Generated Images</h1>
+            <div class="is-size-5 publication-authors">
+              <span class="author-block">
+                <a href="https://yitingqu.github.io/" style="color:#F2A900;font-weight:normal;">Yiting Qu</a>,
+              </span>
+              <span class="author-block">
+                <a href="https://xinyueshen.me/" style="color:#F2A900;font-weight:normal;">Xinyue Shen</a>,
+              </span>
+              <span class="author-block">
+                <a href="https://yxoh.github.io/" style="color:#F2A900;font-weight:normal;">Yixin Wu</a>,
+              </span>
+              <span class="author-block">
+                <a href="https://cispa.de/en/people/backes" style="color:#F2A900;font-weight:normal;">Michael Backes</a>,
+              </span>
+              <span class="author-block">
+                <a href="https://zsavvas.github.io/" style="color:#008AD7;font-weight:normal;">Savvas Zannettou</a>,
+              </span>
+              <span class="author-block">
+                <a href="https://yangzhangalmo.github.io/" style="color:#F2A900;font-weight:normal;">Yang Zhang</a>,
+              </span>
+            </div>
+            <div class="is-size-5 publication-authors">
+              <span class="author-block"><b style="color:#F2A900; font-weight:normal">&#x25B6 </b>CISPA Helmholtz Center for Information Security</span>
+              <span class="author-block"><b style="color:#008AD7; font-weight:normal">&#x25B6 </b> TU Delft</span>
+            </div>
+            <div class="column has-text-centered">
+              <div class="publication-links">
+                <span class="link-block">
+                  <a href="https://arxiv.org/abs/xxxx.xxxx" target="_blank"
+                    class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="ai ai-arxiv"></i>
+                    </span>
+                    <span>arXiv</span>
+                  </a>
+                </span>
+                <span class="link-block">
+                  <a href="https://github.com/YitingQu/UnsafeBench" target="_blank"
+                    class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="fab fa-github"></i>
+                    </span>
+                    <span>Code</span>
+                  </a>
+                </span>
+                <span class="link-block">
+                  <a href="https://huggingface.co/datasets/yiting/UnsafeBench" target="_blank"
+                    class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="fas fa-database"></i>
+                    </span>
+                    <span>Dataset</span>
+                  </a>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section"  style="background-color:#efeff081">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-six-fifths">
+          <h2 class="title is-3">Abstract</h2>
+          <div class="content has-text-justified">
+            <p>
+            Image safety classifiers play an important role in identifying and mitigating the spread of unsafe images online (e.g., images including violence, hateful rhetoric, etc.). 
+            At the same time, with the advent of text-to-image models and increasing concerns about the safety of AI models, developers are increasingly relying on image safety classifiers to safeguard their models. 
+            Yet, the performance of current image safety classifiers remains unknown for real-world and AI-generated images.
+              <ol type="1">
+                <li><b>UnsafeBench Dataset</b>. <span style="font-size: 95%;">We curate a large dataset of 10K real-world and AI-generated images that are annotated as safe or unsafe based on a set of 11
+                  unsafe categories of images (sexual, violent, hateful, etc.). </span></li>
+                <li><b>UnsafeBench</b>. <span style="font-size: 95%;">We propose UnsafeBench, a benchmarking framework that evaluates the effectiveness and robustness of image safety classifiers, i.e., five conventional classifiers and three VLM-based classifiers</li>
+                <li><b>Insights</b>. <span style="font-size: 95%;">Our assessment indicates that existing image safety classifiers are not comprehensive and effective enough in mitigating the multifaceted problem of
+                  unsafe images. Also, we find that classifiers trained only on real-world images tend to have degraded performance when applied to
+                  AI-generated images</li>
+                <li><b>PerspectiveVision</b>. <span style="font-size: 95%;">We design and implement a comprehensive image moderation tool called PerspectiveVision, which effectively identifies 11 categories of real-world and AI-generated unsafe images. 
+                  The best PerspectiveVision model achieves an overall F1-Score of 0.810 on six evaluation datasets, which is comparable with closed-source and expensive state-of-the art models like GPT-4V.</li>
+              </ol>  
+              <span style="color:#f20000;font-weight:normal;"><b>Disclaimer. This website contains disturbing and unsafe images. Reader discretion is recommended.</span></b>
+            </p>
+          </div>
+        </div>
+      </div>
+  </section>
+
+<section class="section">
+  <!-- Results. -->
+  <div class="columns is-centered has-text-centered">
+    <div class="column is-six-fifths">
+      <h2 class="title is-3"><img id="painting_icon" width="3%" src="https://cdn-icons-png.flaticon.com/512/5886/5886212.png"> UnsafeBench Dataset</h2>
+    </div>
+  </div>
+  <!-- </div> -->
+  <!--/ Results. -->    
+<div class="container is-max-desktop">
+
+  <div class="columns is-centered">
+    <div class="column is-full-width">
+      <div class="content has-text-justified">
+        <p>
+          We collect real-world images from LAION-5B and AI-generated images from Lexica using unsafe keywords.
+          We then perform a human annotation to determine if these collected images are truly unsafe.
+          The dataset includes 10,146 annotated images, covering 11 unsafe categories.
+          It is available upon request at <a href="https://huggingface.co/datasets/yiting/UnsafeBench">[HuggingFace Dataset]</a>.
+        </p>
+        
+        <i>*Unsafe image taxonomy (i.e., 11 unsafe categories) is from previous <a href="https://web.archive.org/web/20220406151527/https://labs.openai.com/policies/content-policy">OpenAI content policy</a>, updated in April 6, 2022.</i>
+
+<!-- CSS Code: Place this code in the document's head (between the 'head' tags) -->
+<style>
+  table.GeneratedTable {
+    width: 80%;
+    background-color: #ffffff;
+    border-collapse: collapse;
+    border-width: 2px;
+    border-color: #c1c4c5;
+    border-style: solid;
+    color: #000000;
+  }
+  
+  table.GeneratedTable td, table.GeneratedTable th {
+    border-width: 2px;
+    border-color: #9b9d9e;
+    border-style: solid;
+    padding: 3px;
+  }
+  
+  table.GeneratedTable thead {
+    background-color: #ced5e5;
+  }
+  </style>
+  
+  <!-- HTML Code: Place this code in the document's body (between the 'body' tags) where the table should appear -->
+  <div class="column is-six-fifths" width="80%" style="display: flex; align-items: flex-start; justify-content: center;">
+  <table class="GeneratedTable">
+    <thead>
+      <tr>
+        <th>Source</th>
+        <th># Safe</th>
+        <th># Unsafe</th>
+        <th># All</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a href="https://rom1504.github.io/clip-retrieval/?back=https%3A%2F%2Fknn.laion.ai&index=laion5B-H-14&useMclip=false">LAION-5B</a> </td>
+        <td>3,228</td>
+        <td>1,832</td>
+        <td>5,060</td>
+      </tr>
+      <tr>
+        <td><a href="https://lexica.art/">Lexica</a></td>
+        <td>2,870</td>
+        <td>2,216</td>
+        <td>5,086</td>
+      </tr>
+      <tr>
+        <td># All</a></td>
+        <td>6,098</td>
+        <td>4,048</td>
+        <td>10,146</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<section class="section"  style="background-color: transparent">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-six-fifths">
+        <h2 style="color:#f20000" class="title is-5">Be careful, we are about to show some unsafe examples.</h2>
+        <div class="content has-text-justified">
+        </div>
+      </div>
+    </div>
+</section>
+
+
+  <div class="columns is-centered has-text-centered">
+  <div class="column is-six-fifths" style="display: flex; align-items: flex-start; justify-content: center;">  
+   
+    <figure style="text-align: center;">
+      <img id="teaser" width="80%" src="images/Laion_image_samples.png">
+      <figcaption style="font-style: normal;">
+        Examples from LAION-5B (Real-World Unsafe Images)
+      </figcaption style="font-style: normal;">
+    </figure>
+
+  </div>
+  </div>  
+
+  <div class="columns is-centered has-text-centered">
+  <div class="column is-six-fifths" style="display: flex; align-items: flex-start; justify-content: center;">  
+      
+    <figure style="text-align: center;">
+        <img id="teaser" width="80%" src="images/Lexica_image_samples.png">  
+        <figcaption style="font-style: normal;">
+          Examples from Lexica (AI-Generated Unsafe Images)
+        </figcaption style="font-style: normal;">
+      </figure>
+
+    </div>
+    </div>  
+</section>
+
+<section class="section">
+  <div class="columns is-centered has-text-centered">
+    <div class="column is-six-fifths">
+      <h2 class="title is-3"><img id="painting_icon" width="3%" src="https://cdn-icons-png.flaticon.com/512/5379/5379860.png"> UnsafeBench Framework </h2>
+    </div>
+  </div>
+  <!-- </div> -->
+  <!--/ Results. -->    
+<div class="container is-max-desktop">
+
+  <div class="columns is-centered">
+    <div class="column is-full-width">
+      <div class="content has-text-justified"> 
+        <p>
+          We first construct the UnsafeBench dataset, which contains 10K images with human annotations. 
+          We then collect the existing image safety classifiers, as conventional classifiers, and three VLMs capable of classifying unsafe images, as VLM-based classifiers. 
+          We identify the range of unsafe content covered by these classifiers and align them with our unsafe image taxonomy, i.e., 11 unsafe categories. 
+          Finally, we evaluate the effectiveness and robustness of these classifiers; effectiveness measures how accurately the classifiers can identify unsafe images, while robustness reflects their ability to maintain accuracy when faced with perturbed images.
+        </p>
+      </div>
+        <div style="text-align: center;">
+          <img id="teaser" width="70%" src="images/overview.png">
+          <figcaption>
+            Overview of UnsafeBench
+          </figcaption>  
+        </div>       
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <!-- Results. -->
+  <div class="columns is-centered has-text-centered">
+    <div class="column is-six-fifths">
+      <h2 class="title is-3"><img id="painting_icon" width="3%" src="https://cdn-icons-png.flaticon.com/512/3515/3515174.png"> Evaluation Results</h2>
+    </div>
+  </div>
+
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">
+      <div class="column is-full-width">
+        <div class="content has-text-justified"> 
+
+        <!-- <div class="column is-full-width"> -->
+          <h2 class="title is-4">
+            <img id="painting_icon" width="4%" src="https://cdn-icons-png.flaticon.com/512/1698/1698535.png">
+            <span style="font-size: 100%;">Effectiveness</span>
+          </h2>
+
+          <span class="author-block">
+            <b style="color:#c7ebff; font-weight:normal">&#x25B6;</b>
+            <span class="highlighted-text">Evaluation Metric: <span style="background-color: #c7ebff; padding: 0 5px; border-radius: 5px;">F1-Score</span></span>
+          </span>
+
+          <p>Our assessment reveals several insights. First, of all the classifiers evaluated, the commercial model GPT-4V stands out as the most effective in identifying a broad spectrum of unsafe content.
+            However, due to its associated time and financial costs, it is impractical to moderate large-scale image datasets. Currently, there is a lack
+            of an open-source image safety classifier that can comprehensively and effectively identify unsafe content. 
+            Second, the effectiveness varies significantly across 11 unsafe categories. Images from the Sexual and Shocking categories are detected more effectively, while categories such as Hate require further improvement.
+            Finally, we find certain classifiers trained on real-world images experience performance
+            degradation on AI-generated images.
+          </p>
+          
+          <div style="text-align: center;">
+            <figure style="text-align: center;">
+              <img id="teaser" width="100%" src="images/effectiveness.png">  
+            </figure>
+          </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+  
+<div class="container is-max-desktop">
+  <div class="columns is-centered">
+    <div class="column is-full-width">
+      <div class="content has-text-justified"> 
+
+        <h2 class="title is-4"> 
+          <img id="painting_icon" width="3%" src="https://scienceqa.github.io/img/logo.png">
+          <span style="font-size: 100%;"> Robustness</span>
+        </h2>
+
+          <span class="author-block">
+            <b style="color:#c7ebff; font-weight:normal">&#x25B6;</b>
+            <span class="highlighted-text">Evaluation Metric: <span style="background-color: #f0af18; padding: 0 5px; border-radius: 5px;">Robust Accuracy</span> <span style="background-color: #c7ebff; padding: 0 5px; border-radius: 5px;">Mean Square Error</span></span>
+          </span>
+
+        <p>Leveraging large pre-trained foundation models such as VLMs and CLIP presents higher robustness compared to training a small classifier from scratch. Under perturbed
+          images, VLM-based classifiers present the highest Robust Accuracy (RA) above 0.608. 
+          Among conventional classifiers, those that utilize CLIP as an image feature extractor, such as Q16, MultiHeaded, SD_Filter, and NSFW_Detector, demonstrate higher robustness compared to those trained from
+          scratch, e.g., NudeNet. 
+          Minimal perturbation is sufficient to deceive NudeNet, with an average RA of only 0.293
+        </p>
+
+        <div style="text-align: center;">
+          <figure style="text-align: center;">
+          <img id="teaser" width="68%" src="images/robustness.png">  
+        </figure>
+        </div>
+
+      </div>
+  </div>
+</div>
+</section>
+
+<section class="section">
+  <div class="columns is-centered has-text-centered">
+    <div class="column is-six-fifths">
+      <h2 class="title is-3"><img id="painting_icon" width="3%" src="https://cdn-icons-png.flaticon.com/512/5379/5379860.png"> PerspectiveVision </h2>
+    </div>
+  </div>
+
+  <div class="container is-max-desktop">
+
+    <div class="columns is-centered">
+      <div class="column is-full-width">
+        <div class="content has-text-justified"> 
+
+          <p>We introduce PerspectiveVision, a set of models that provide fine-grained classification of unsafe images based on the 11 categories of unsafe images.
+            Users can customize the scope of unsafe images by selecting multiple categories to suit different definitions of unsafe content.
+          </p>
+            <figure style="text-align: center;">
+            <img id="teaser" width="50%" src="images/perspective-vision.png">  
+            </figure>
+        </div>
+      </div>
+    </div>
+
+  <div class="column is-full-width">
+    <h2 class="title is-4">
+      <img id="painting_icon" width="4%" src="https://cdn-icons-png.flaticon.com/512/3515/3515174.png">
+      <span style="font-size: 100%;">Performance on UnsafeBench Test Set</span>
+    </h2>
+    <span class="author-block">
+      <b style="color:#c7ebff; font-weight:normal">&#x25B6;</b>
+      <span class="highlighted-text">Evaluation Metric: <span style="background-color: #c7ebff; padding: 0 5px; border-radius: 5px;">F1-Score</span></span>
+    </span>
+
+  <figure style="text-align: center;">
+    <img id="teaser" width="80%" src="images/test_eval.png">  
+  </figure>
+  </div>
+
+  <div class="column is-full-width">
+    <h2 class="title is-4">
+      <img id="painting_icon" width="4%" src="https://cdn-icons-png.flaticon.com/512/3515/3515174.png">
+      <span style="font-size: 100%;">Performance on External Datasets</span>
+    </h2>
+    <span class="author-block">
+      <b style="color:#c7ebff; font-weight:normal">&#x25B6;</b>
+      <span class="highlighted-text">Evaluation Metric: <span style="background-color: #c7ebff; padding: 0 5px; border-radius: 5px;">F1-Score</span></span>
+    </span>
+  
+  <div class="column has-text-centered">
+    <div class="publication-links">
+      <span class="link-block">
+        <a href="https://osf.io/2rqad/" target="_blank"
+          class="external-link button is-small is-rounded">
+          <span class="icon">
+            <i class="fas fa-database"></i>
+          </span>
+          <span>SMID</span>
+        </a>
+      </span>
+      <span class="link-block">
+        <a href="https://zenodo.org/records/8255664" target="_blank"
+          class="external-link button is-small is-rounded">
+          <span class="icon">
+            <i class="fas fa-database"></i>
+          </span>
+          <span>MultiHeaded-D</span>
+        </a>
+      </span>
+      <span class="link-block">
+        <a href="https://academictorrents.com/details/1cda9427784a6b77809f657e772814dc766b69f5" target="_blank"
+          class="external-link button is-small is-rounded">
+          <span class="icon">
+            <i class="fas fa-database"></i>
+          </span>
+          <span>NudeNet-D</span>
+        </a>
+      </span>
+        </a>
+      </span>
+      <span class="link-block">
+        <a href="https://www.adl.org/resources/hate-symbols/search" target="_blank"
+          class="external-link button is-small is-rounded">
+          <span class="icon">
+            <i class="fas fa-database"></i>
+          </span>
+          <span>Hate-Symbols</span>
+        </a>
+      </span>
+      <span class="link-block">
+        <a href="https://universe.roboflow.com/cyber-dive/image-self-harm/" target="_blank"
+          class="external-link button is-small is-rounded">
+          <span class="icon">
+            <i class="fas fa-database"></i>
+          </span>
+          <span>Self-Harm-a</span>
+        </a>
+      </span>
+      <span class="link-block">
+        <a href="https://universe.roboflow.com/abnormalbehaviordetect/hang-detection/dataset/1" target="_blank"
+          class="external-link button is-small is-rounded">
+          <span class="icon">
+            <i class="fas fa-database"></i>
+          </span>
+          <span>Self-Harm-b</span>
+        </a>
+      </span>
+      <span class="link-block">
+        <a href="https://universe.roboflow.com/weapondetection-e6lq3/weapon-detection-i6jxw/dataset/2" target="_blank"
+          class="external-link button is-small is-rounded">
+          <span class="icon">
+            <i class="fas fa-database"></i>
+          </span>
+          <span>Violent Behaviors</span>
+        </a>
+      </span>
+    </div>
+  </div>
+
+
+  <figure style="text-align: center;">
+    <img id="teaser" width="70%" src="images/external_eval.png">  
+  </figure>
+  </div>
+
+</section>
+
+  <section class="section" id="BibTeX">
+    <div class="container is-max-desktop content">
+      <h2 class="title">BibTeX</h2>
+  
+        <p>If you find this useful in your research, please consider citing:</p>
+      <pre><code>
+
+  </code></pre>
+    </div>
+  </section>
+  
+  <section class="section" id="Acknowledgement">
+    <div class="container is-max-desktop content">
+      <h2 class="title">Acknowledgement</h2>
+      <p>
+        This website is adapted from <a
+        href="https://github.com/nerfies/nerfies.github.io">Nerfies</a> and <a href="https://github.com/LLaVA-VL/llava-vl.github.io">LLaVA-VL</a>, licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative
+        Commons Attribution-ShareAlike 4.0 International License</a>.
+      </p>
+      <p>
+<b>Ethical Consideration: The dataset can only be used for research purposes. Any kind of misuse is strictly prohibited.</b>
+</p>  
+    </div>
+  </section>
+
+</body>
+
+</html>
